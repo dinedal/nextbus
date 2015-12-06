@@ -2,7 +2,6 @@ package nextbus
 
 import (
     "encoding/xml"
-    "fmt"
     "io/ioutil"
     "net/http"
 )
@@ -30,7 +29,6 @@ func GetAgencyList() ([]Agency, error) {
     if readErr != nil {
         return nil, readErr
     }
-    fmt.Println(string(body))
 
     var a AgencyResponse
     xmlErr := xml.Unmarshal(body, &a)
@@ -62,7 +60,6 @@ func GetRouteList(agencyTag string) ([]Route, error) {
     if readErr != nil {
         return nil, readErr
     }
-    fmt.Println(string(body))
 
     var a RouteResponse
     xmlErr := xml.Unmarshal(body, &a)
@@ -137,7 +134,6 @@ func GetRouteConfig(agencyTag string, routeTag string) ([]RouteConfig, error) {
     if readErr != nil {
         return nil, readErr
     }
-    fmt.Println(string(body))
 
     var a RouteConfigResponse
     xmlErr := xml.Unmarshal(body, &a)
@@ -199,7 +195,6 @@ func GetPredictions(agencyTag string, routeTag string, stopTag string) ([]Predic
     if readErr != nil {
         return nil, readErr
     }
-    fmt.Println(string(body))
 
     var a PredictionResponse
     xmlErr := xml.Unmarshal(body, &a)
