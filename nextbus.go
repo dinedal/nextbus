@@ -6,13 +6,17 @@ import (
 	"net/http"
 )
 
+// DefaultClient uses the default http client to make requests
+var DefaultClient = &Client{http.DefaultClient}
+
 // Client is used to make requests
 type Client struct {
 	httpClient *http.Client
 }
 
-// DefaultClient uses the default http client to make requests
-var DefaultClient = Client{http.DefaultClient}
+func NewClient(httpClient *http.Client) *Client {
+	return &Client{httpClient}
+}
 
 type AgencyResponse struct {
 	XMLName    xml.Name `xml:"body"`
