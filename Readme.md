@@ -19,25 +19,26 @@ import (
 )
 
 func main() {
-    alist, aerr := nextbus.GetAgencyList()
+    nb := nextbus.DefaultClient
+    alist, aerr := nb.GetAgencyList()
     if aerr != nil {
         fmt.Println(aerr)
     }
     fmt.Println(alist)
 
-    rlist, rerr := nextbus.GetRouteList("sf-muni")
+    rlist, rerr := nb.GetRouteList("sf-muni")
     if rerr != nil {
         fmt.Println(rerr)
     }
     fmt.Println(rlist)
 
-    rconfig, rcerr := nextbus.GetRouteConfig("sf-muni", "N")
+    rconfig, rcerr := nb.GetRouteConfig("sf-muni", "N")
     if rcerr != nil {
         fmt.Println(rcerr)
     }
     fmt.Println(rconfig)
 
-    predictions, perr := nextbus.GetPredictions("sf-muni", "N", "5205")
+    predictions, perr := nb.GetPredictions("sf-muni", "N", "5205")
     if perr != nil {
         fmt.Println(perr)
     }
