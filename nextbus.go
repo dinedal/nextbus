@@ -6,9 +6,13 @@ import (
 	"net/http"
 )
 
-// TODO(gina) switch away from this global thing to letting caller new
-// up their own custom thing (e.g. a struct with methods).
-var Client = http.DefaultClient
+// Client is used to make requests
+type Client struct {
+	httpClient *http.Client
+}
+
+// DefaultClient uses the default http client to make requests
+var DefaultClient = Client{http.DefaultClient}
 
 type AgencyResponse struct {
 	XMLName    xml.Name `xml:"body"`
@@ -22,8 +26,8 @@ type Agency struct {
 	RegionTitle string   `xml:"regionTitle,attr"`
 }
 
-func GetAgencyList() ([]Agency, error) {
-	resp, httpErr := Client.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=agencyList")
+func (c *Client) GetAgencyList() ([]Agency, error) {
+	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=agencyList")
 	if httpErr != nil {
 		return nil, httpErr
 	}
@@ -53,8 +57,8 @@ type Route struct {
 	Title   string   `xml:"title,attr"`
 }
 
-func GetRouteList(agencyTag string) ([]Route, error) {
-	resp, httpErr := Client.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=routeList&a=" + agencyTag)
+func (c *Client) GetRouteList(agencyTag string) ([]Route, error) {
+	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=routeList&a=" + agencyTag)
 	if httpErr != nil {
 		return nil, httpErr
 	}
@@ -127,8 +131,8 @@ type Point struct {
 	Lon     string   `xml:"lon,attr"`
 }
 
-func GetRouteConfig(agencyTag string, routeTag string) ([]RouteConfig, error) {
-	resp, httpErr := Client.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=routeConfig&a=" + agencyTag + "&r=" + routeTag)
+func (c *Client) GetRouteConfig(agencyTag string, routeTag string) ([]RouteConfig, error) {
+	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=routeConfig&a=" + agencyTag + "&r=" + routeTag)
 	if httpErr != nil {
 		return nil, httpErr
 	}
@@ -188,8 +192,8 @@ type Message struct {
 	Priority string   `xml:"priority,attr"`
 }
 
-func GetPredictions(agencyTag string, routeTag string, stopTag string) ([]PredictionData, error) {
-	resp, httpErr := Client.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=predictions&a=" + agencyTag + "&r=" + routeTag + "&s=" + stopTag)
+func (c *Client) GetPredictions(agencyTag string, routeTag string, stopTag string) ([]PredictionData, error) {
+	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=predictions&a=" + agencyTag + "&r=" + routeTag + "&s=" + stopTag)
 	if httpErr != nil {
 		return nil, httpErr
 	}
