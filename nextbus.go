@@ -4,6 +4,8 @@ import (
 	"encoding/xml"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 // DefaultClient uses the default http client to make requests
@@ -135,8 +137,38 @@ type Point struct {
 	Lon     string   `xml:"lon,attr"`
 }
 
-func (c *Client) GetRouteConfig(agencyTag string, routeTag string) ([]RouteConfig, error) {
-	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=routeConfig&a=" + agencyTag + "&r=" + routeTag)
+// RouteConfigParam is a configuration parameters for GetRouteConfig.
+type RouteConfigParam func() string
+
+// RouteConfigTag creates a RouteConfigParam that restricts a
+// GetRouteConfig call to a single route.
+func RouteConfigTag(tag string) RouteConfigParam {
+	return func() string {
+		return "r=" + url.QueryEscape(tag)
+	}
+}
+
+// RouteConfigTerse configures a GetRouteConfig call to avoid path results
+func RouteConfigTerse() RouteConfigParam {
+	return func() string {
+		return "terse"
+	}
+}
+
+// RouteConfigVerbose configures a GetRouteConfig call to include directions
+// not normally shown in UIs.
+func RouteConfigVerbose() RouteConfigParam {
+	return func() string {
+		return "verbose"
+	}
+}
+
+func (c *Client) GetRouteConfig(agencyTag string, configParams ...RouteConfigParam) ([]RouteConfig, error) {
+	params := []string{"command=routeConfig", "a=" + url.QueryEscape(agencyTag)}
+	for _, cp := range configParams {
+		params = append(params, cp())
+	}
+	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?" + strings.Join(params, "&"))
 	if httpErr != nil {
 		return nil, httpErr
 	}
