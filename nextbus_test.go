@@ -42,6 +42,13 @@ var fakes = map[string]string{
 <route tag="2" title="2-second"/>
 </body>
 `,
+	makeURL("vehicleLocations", "a", "alpha", "t", "0"): `
+<body copyright="All data copyright some transit company.">
+<vehicle id="1111" routeTag="1" dirTag="1_outbound" lat="37.77513" lon="-122.41946" secsSinceReport="4" predictable="true" heading="225" speedKmHr="0" leadingVehicleId="1112"/>
+<vehicle id="2222" routeTag="2" dirTag="2_inbound" lat="37.74891" lon="-122.45848" secsSinceReport="5" predictable="true" heading="217" speedKmHr="0" leadingVehicleId="2223"/>
+<lastTime time="1234567890123"/>
+</body>
+`,
 }
 
 type fakeRoundTripper struct {
@@ -100,6 +107,46 @@ func TestGetRouteList(t *testing.T) {
 		Route{xmlName("route"), "2", "2-second"},
 	}
 	equals(t, expected, found)
+}
+
+func TestGetVehicleLocations(t *testing.T) {
+	nb := NewClient(testingClient(t))
+	found, err := nb.GetVehicleLocations("alpha")
+	ok(t, err)
+
+	expected := LocationResponse{
+		xmlName("body"),
+		[]VehicleLocation{
+			VehicleLocation{
+				xmlName("vehicle"),
+				"1111",
+				"1",
+				"1_outbound",
+				"37.77513",
+				"-122.41946",
+				"4",
+				"true",
+				"225",
+				"0",
+				"1112",
+			},
+			VehicleLocation{
+				xmlName("vehicle"),
+				"2222",
+				"2",
+				"2_inbound",
+				"37.74891",
+				"-122.45848",
+				"5",
+				"true",
+				"217",
+				"0",
+				"2223",
+			},
+		},
+		LocationLastTime{xmlName("lastTime"), "1234567890123"},
+	}
+	equals(t, &expected, found)
 }
 
 // assert fails the test if the condition is false.

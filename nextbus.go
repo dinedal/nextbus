@@ -247,3 +247,73 @@ func (c *Client) GetPredictions(agencyTag string, routeTag string, stopTag strin
 	}
 	return a.PredictionDataList, nil
 }
+
+type LocationResponse struct {
+	XMLName     xml.Name          `xml:"body"`
+	VehicleList []VehicleLocation `xml:"vehicle"`
+	LastTime    LocationLastTime  `xml:"lastTime"`
+}
+
+type VehicleLocation struct {
+	XMLName          xml.Name `xml:"vehicle"`
+	ID               string   `xml:"id,attr"`
+	RouteTag         string   `xml:"routeTag,attr"`
+	DirTag           string   `xml:"dirTag,attr"`
+	Lat              string   `xml:"lat,attr"`
+	Lon              string   `xml:"lon,attr"`
+	SecsSinceReport  string   `xml:"secsSinceReport,attr"`
+	Predictable      string   `xml:"predictable,attr"`
+	Heading          string   `xml:"heading,attr"`
+	SpeedKmHr        string   `xml:"speedKmHr,attr"`
+	LeadingVehicleID string   `xml:"leadingVehicleId,attr"`
+}
+
+type LocationLastTime struct {
+	XMLName xml.Name `xml:"lastTime"`
+	Time    string   `xml:"time,attr"`
+}
+
+type VehicleLocationParam func() string
+
+func VehicleLocationRoute(routeTag string) VehicleLocationParam {
+	return func() string {
+		return "r=" + url.QueryEscape(routeTag)
+	}
+}
+
+func VehicleLocationTime(t string) VehicleLocationParam {
+	return func() string {
+		return "t=" + url.QueryEscape(t)
+	}
+}
+
+func (c *Client) GetVehicleLocations(agencyTag string, configParams ...VehicleLocationParam) (*LocationResponse, error) {
+	params := []string{"command=vehicleLocations", "a=" + url.QueryEscape(agencyTag)}
+	timeWasSet := false
+	for _, cp := range configParams {
+		paramText := cp()
+		if strings.HasPrefix(paramText, "t=") {
+			timeWasSet = true
+		}
+		params = append(params, paramText)
+	}
+	if !timeWasSet {
+		params = append(params, VehicleLocationTime("0")())
+	}
+	resp, err := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?" + strings.Join(params, "&"))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result LocationResponse
+	if err = xml.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
