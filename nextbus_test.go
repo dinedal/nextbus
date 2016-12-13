@@ -42,6 +42,22 @@ var fakes = map[string]string{
 <route tag="2" title="2-second"/>
 </body>
 `,
+	makeURL("routeConfig", "a", "alpha"): `
+<body copyright="All data copyright some transit company.">
+<route tag="1" title="1-first" color="660000" oppositeColor="ffffff" latMin="12.3456789" latMax="45.6789012" lonMin="-123.4567890" lonMax="-456.78901">
+<stop tag="1123" title="First stop" lat="12.3456789" lon="-123.45789" stopId="98765"/>
+<stop tag="1234" title="Second stop" lat="23.4567890" lon="-456.78901" stopId="87654"/>
+<direction tag="1out" title="Outbound to somewhere" name="Outbound" useForUI="true">
+<stop tag="1123"/>
+<stop tag="1234"/>
+</direction>
+<direction tag="1in" title="Inbound to somewhere" name="Inbound" useForUI="true">
+<stop tag="1234"/>
+<stop tag="1123"/>
+</direction>
+</route>
+</body>
+`,
 	makeURL("vehicleLocations", "a", "alpha", "t", "0"): `
 <body copyright="All data copyright some transit company.">
 <vehicle id="1111" routeTag="1" dirTag="1_outbound" lat="37.77513" lon="-122.41946" secsSinceReport="4" predictable="true" heading="225" speedKmHr="0" leadingVehicleId="1112"/>
@@ -85,6 +101,14 @@ func xmlName(s string) xml.Name {
 	return xml.Name{Space: "", Local: s}
 }
 
+func stopMarkers(tags ...string) []StopMarker {
+	var result []StopMarker
+	for _, t := range tags {
+		result = append(result, StopMarker{xmlName("stop"), t})
+	}
+	return result
+}
+
 func TestGetAgencyList(t *testing.T) {
 	nb := NewClient(testingClient(t))
 	found, err := nb.GetAgencyList()
@@ -105,6 +129,50 @@ func TestGetRouteList(t *testing.T) {
 	expected := []Route{
 		Route{xmlName("route"), "1", "1-first"},
 		Route{xmlName("route"), "2", "2-second"},
+	}
+	equals(t, expected, found)
+}
+
+func TestGetRouteConfig(t *testing.T) {
+	nb := NewClient(testingClient(t))
+	found, err := nb.GetRouteConfig("alpha")
+	ok(t, err)
+
+	expected := []RouteConfig{
+		RouteConfig{
+			xmlName("route"),
+			[]Stop{
+				Stop{
+					xmlName("stop"),
+					"1123", "First stop", "12.3456789", "-123.45789", "98765",
+				},
+				Stop{
+					xmlName("stop"),
+					"1234", "Second stop", "23.4567890", "-456.78901", "87654",
+				},
+			},
+			"1",
+			"1-first",
+			"660000",
+			"ffffff",
+			"12.3456789",
+			"45.6789012",
+			"-123.4567890",
+			"-456.78901",
+			[]Direction{
+				Direction{
+					xmlName("direction"),
+					"1out", "Outbound to somewhere", "Outbound", "true",
+					stopMarkers("1123", "1234"),
+				},
+				Direction{
+					xmlName("direction"),
+					"1in", "Inbound to somewhere", "Inbound", "true",
+					stopMarkers("1234", "1123"),
+				},
+			},
+			nil,
+		},
 	}
 	equals(t, expected, found)
 }

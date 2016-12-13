@@ -89,18 +89,18 @@ type RouteConfigResponse struct {
 }
 
 type RouteConfig struct {
-	XMLName       xml.Name  `xml:"route"`
-	StopList      []Stop    `xml:"stop"`
-	Tag           string    `xml:"tag,attr"`
-	Title         string    `xml:"title,attr"`
-	Color         string    `xml:"color,attr"`
-	OppositeColor string    `xml:"oppositeColor,attr"`
-	LatMin        string    `xml:"latMin,attr"`
-	LatMax        string    `xml:"latMax,attr"`
-	LonMin        string    `xml:"lonMin,attr"`
-	LonMax        string    `xml:"lonMax,attr"`
-	Dir           Direction `xml:"direction"`
-	PathList      []Path    `xml:"path"`
+	XMLName       xml.Name    `xml:"route"`
+	StopList      []Stop      `xml:"stop"`
+	Tag           string      `xml:"tag,attr"`
+	Title         string      `xml:"title,attr"`
+	Color         string      `xml:"color,attr"`
+	OppositeColor string      `xml:"oppositeColor,attr"`
+	LatMin        string      `xml:"latMin,attr"`
+	LatMax        string      `xml:"latMax,attr"`
+	LonMin        string      `xml:"lonMin,attr"`
+	LonMax        string      `xml:"lonMax,attr"`
+	DirList       []Direction `xml:"direction"`
+	PathList      []Path      `xml:"path"`
 }
 
 type Stop struct {
