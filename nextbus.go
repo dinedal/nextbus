@@ -2,6 +2,7 @@ package nextbus
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -215,6 +216,7 @@ type Prediction struct {
 	Seconds           string   `xml:"seconds,attr"`
 	Minutes           string   `xml:"minutes,attr"`
 	IsDeparture       string   `xml:"isDeparture,attr"`
+	AffectedByLayover string   `xml:"affectedByLayover,attr"`
 	DirTag            string   `xml:"dirTag,attr"`
 	Vehicle           string   `xml:"vehicle,attr"`
 	VehiclesInConsist string   `xml:"vehiclesInConsist,attr"`
@@ -230,6 +232,53 @@ type Message struct {
 
 func (c *Client) GetPredictions(agencyTag string, routeTag string, stopTag string) ([]PredictionData, error) {
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=predictions&a=" + agencyTag + "&r=" + routeTag + "&s=" + stopTag)
+	if httpErr != nil {
+		return nil, httpErr
+	}
+	defer resp.Body.Close()
+
+	body, readErr := ioutil.ReadAll(resp.Body)
+	if readErr != nil {
+		return nil, readErr
+	}
+
+	var a PredictionResponse
+	xmlErr := xml.Unmarshal(body, &a)
+	if xmlErr != nil {
+		return nil, xmlErr
+	}
+	return a.PredictionDataList, nil
+}
+
+// PredReqParam knows how to configure a request for a multi stop prediction.
+type PredReqParam func() string
+
+// PredReqStop specifies a route and stop which we want predictions for.
+func PredReqStop(routeTag, stopTag string) PredReqParam {
+	return func() string {
+		return "stops=" + url.QueryEscape(fmt.Sprintf("%s|%s", routeTag, stopTag))
+	}
+}
+
+// PredReqShortTitles specifies that we want short titles in our
+// predictions response.
+func PredReqShortTitles() PredReqParam {
+	return func() string {
+		return "useShortTitles=true"
+	}
+}
+
+// GetPredictionsForMultiStops Issues a request to get predictions for multiple stops.
+func (c *Client) GetPredictionsForMultiStops(agencyTag string, params ...PredReqParam) ([]PredictionData, error) {
+	queryParams := []string{
+		"command=predictionsForMultiStops",
+		"a=" + url.QueryEscape(agencyTag),
+	}
+	for _, p := range params {
+		queryParams = append(queryParams, p())
+	}
+
+	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?" + strings.Join(queryParams, "&"))
 	if httpErr != nil {
 		return nil, httpErr
 	}
