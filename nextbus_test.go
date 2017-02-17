@@ -65,7 +65,22 @@ var fakes = map[string]string{
 <lastTime time="1234567890123"/>
 </body>
 `,
-}
+	makeURL("predictionsForMultiStops", "a", "alpha", "stops", "1|1123", "stops", "1|1124"): `
+<body copyright="All data copyright some transit company.">
+<predictions agencyTitle="some transit company" routeTitle="The First" routeTag="1" stopTitle="Some Station Outbound" stopTag="1123">
+<direction title="Outbound">
+<prediction epochTime="1487277081162" seconds="181" minutes="3" isDeparture="false" dirTag="1____O_F00" vehicle="1111" vehiclesInConsist="2" block="9999" tripTag="7318265"/>
+<prediction epochTime="1487277463429" seconds="563" minutes="9" isDeparture="false" affectedByLayover="true" dirTag="1____O_F00" vehicle="2222" vehiclesInConsist="2" block="8888" tripTag="7318264"/>
+</direction>
+</predictions>
+<predictions agencyTitle="some transit company" routeTitle="The First" routeTag="1" stopTitle="Some Other Station Outbound" stopTag="1124">
+<direction title="Outbound">
+<prediction epochTime="1487278019915" seconds="1120" minutes="18" isDeparture="false" affectedByLayover="true" dirTag="1____O_F00" vehicle="4444" vehiclesInConsist="2" block="6666" tripTag="7318264"/>
+</direction>
+<message text="No Elevator at Blah blah Station" priority="Normal"/>
+</predictions>
+</body>
+`}
 
 type fakeRoundTripper struct {
 	t *testing.T
@@ -80,7 +95,11 @@ func (f fakeRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	url := req.URL.String()
 	xml, ok := fakes[url]
 	if !ok {
-		f.t.Fatalf("Unexpected url %q.  fakes=%v", url, fakes)
+		valid := []string{}
+		for k := range fakes {
+			valid = append(valid, k)
+		}
+		f.t.Fatalf("Unexpected url %q.  allowable urls are=%q", url, valid)
 		return nil, nil
 	}
 
@@ -215,6 +234,95 @@ func TestGetVehicleLocations(t *testing.T) {
 		LocationLastTime{xmlName("lastTime"), "1234567890123"},
 	}
 	equals(t, &expected, found)
+}
+
+func TestGetPredictionsForMultiStops(t *testing.T) {
+	nb := NewClient(testingClient(t))
+	found, err := nb.GetPredictionsForMultiStops("alpha", PredReqStop("1", "1123"), PredReqStop("1", "1124"))
+	ok(t, err)
+
+	expected := []PredictionData{
+		PredictionData{
+			xmlName("predictions"),
+			[]PredictionDirection{
+				PredictionDirection{
+					xmlName("direction"),
+					[]Prediction{
+						Prediction{
+							xmlName("prediction"),
+							"1487277081162",
+							"181",
+							"3",
+							"false",
+							"",
+							"1____O_F00",
+							"1111",
+							"2",
+							"9999",
+							"7318265",
+						},
+						Prediction{
+							xmlName("prediction"),
+							"1487277463429",
+							"563",
+							"9",
+							"false",
+							"true",
+							"1____O_F00",
+							"2222",
+							"2",
+							"8888",
+							"7318264",
+						},
+					},
+					"Outbound",
+				},
+			},
+			nil,
+			"some transit company",
+			"The First",
+			"1",
+			"Some Station Outbound",
+			"1123",
+		},
+		PredictionData{
+			xmlName("predictions"),
+			[]PredictionDirection{
+				PredictionDirection{
+					xmlName("direction"),
+					[]Prediction{
+						Prediction{
+							xmlName("prediction"),
+							"1487278019915",
+							"1120",
+							"18",
+							"false",
+							"true",
+							"1____O_F00",
+							"4444",
+							"2",
+							"6666",
+							"7318264",
+						},
+					},
+					"Outbound",
+				},
+			},
+			[]Message{
+				Message{
+					xmlName("message"),
+					"No Elevator at Blah blah Station",
+					"Normal",
+				},
+			},
+			"some transit company",
+			"The First",
+			"1",
+			"Some Other Station Outbound",
+			"1124",
+		},
+	}
+	equals(t, expected, found)
 }
 
 // assert fails the test if the condition is false.
