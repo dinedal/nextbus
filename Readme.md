@@ -32,7 +32,7 @@ func main() {
     }
     fmt.Println(rlist)
 
-    rconfig, rcerr := nb.GetRouteConfig("sf-muni", nextBus.RouteConfigTag("N"))
+    rconfig, rcerr := nb.GetRouteConfig("sf-muni", nextbus.RouteConfigTag("N"))
     if rcerr != nil {
         fmt.Println(rcerr)
     }
