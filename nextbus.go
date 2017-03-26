@@ -17,15 +17,18 @@ type Client struct {
 	httpClient *http.Client
 }
 
+// NewClient creates a new nextbus client.
 func NewClient(httpClient *http.Client) *Client {
 	return &Client{httpClient}
 }
 
+// AgencyResponse represents a list of transit agencies.
 type AgencyResponse struct {
 	XMLName    xml.Name `xml:"body"`
 	AgencyList []Agency `xml:"agency"`
 }
 
+// Agency represents a single transit agency.
 type Agency struct {
 	XMLName     xml.Name `xml:"agency"`
 	Tag         string   `xml:"tag,attr"`
@@ -33,6 +36,7 @@ type Agency struct {
 	RegionTitle string   `xml:"regionTitle,attr"`
 }
 
+// GetAgencyList fetches the list of supported transit agencies by nextbus.
 func (c *Client) GetAgencyList() ([]Agency, error) {
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=agencyList")
 	if httpErr != nil {
@@ -53,17 +57,20 @@ func (c *Client) GetAgencyList() ([]Agency, error) {
 	return a.AgencyList, nil
 }
 
+// RouteResponse is a set of transit routes.
 type RouteResponse struct {
 	XMLName   xml.Name `xml:"body"`
 	RouteList []Route  `xml:"route"`
 }
 
+// Route is an individual transit route.
 type Route struct {
 	XMLName xml.Name `xml:"route"`
 	Tag     string   `xml:"tag,attr"`
 	Title   string   `xml:"title,attr"`
 }
 
+// GetRouteList fetches the list of routes within the specified agency.
 func (c *Client) GetRouteList(agencyTag string) ([]Route, error) {
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=routeList&a=" + agencyTag)
 	if httpErr != nil {
@@ -84,11 +91,13 @@ func (c *Client) GetRouteList(agencyTag string) ([]Route, error) {
 	return a.RouteList, nil
 }
 
+// RouteConfigResponse is a collection of RouteConfigs.
 type RouteConfigResponse struct {
 	XMLName   xml.Name      `xml:"body"`
 	RouteList []RouteConfig `xml:"route"`
 }
 
+// RouteConfig is the metadata for a particular transit route.
 type RouteConfig struct {
 	XMLName       xml.Name    `xml:"route"`
 	StopList      []Stop      `xml:"stop"`
@@ -104,15 +113,18 @@ type RouteConfig struct {
 	PathList      []Path      `xml:"path"`
 }
 
+// Stop is the metadata for a particular stop.
 type Stop struct {
 	XMLName xml.Name `xml:"stop"`
 	Tag     string   `xml:"tag,attr"`
 	Title   string   `xml:"title,attr"`
 	Lat     string   `xml:"lat,attr"`
 	Lon     string   `xml:"lon,attr"`
-	StopId  string   `xml:"stopId,attr"`
+	StopID  string   `xml:"stopId,attr"`
 }
 
+// Direction is the metadata for one individual route direction. A transit route
+// usually has at least two "directions": "inbound" and "outbound", for example.
 type Direction struct {
 	XMLName        xml.Name     `xml:"direction"`
 	Tag            string       `xml:"tag,attr"`
@@ -122,16 +134,19 @@ type Direction struct {
 	StopMarkerList []StopMarker `xml:"stop"`
 }
 
+// StopMarker identifies a particular stop for a direction of a route.
 type StopMarker struct {
 	XMLName xml.Name `xml:"stop"`
 	Tag     string   `xml:"tag,attr"`
 }
 
+// Path contains a set of points that define the geographical path of a route.
 type Path struct {
 	XMLName   xml.Name `xml:"path"`
 	PointList []Point  `xml:"point"`
 }
 
+// Point contains a latitude and longitude representing a geographical location.
 type Point struct {
 	XMLName xml.Name `xml:"point"`
 	Lat     string   `xml:"lat,attr"`
@@ -164,6 +179,8 @@ func RouteConfigVerbose() RouteConfigParam {
 	}
 }
 
+// GetRouteConfig fetches the metadata for routes in a particular transit
+// agency. Use the configParams to filter the requested data.
 func (c *Client) GetRouteConfig(agencyTag string, configParams ...RouteConfigParam) ([]RouteConfig, error) {
 	params := []string{"command=routeConfig", "a=" + url.QueryEscape(agencyTag)}
 	for _, cp := range configParams {
@@ -188,11 +205,14 @@ func (c *Client) GetRouteConfig(agencyTag string, configParams ...RouteConfigPar
 	return a.RouteList, nil
 }
 
+// PredictionResponse contains a set of predictions.
 type PredictionResponse struct {
 	XMLName            xml.Name         `xml:"body"`
 	PredictionDataList []PredictionData `xml:"predictions"`
 }
 
+// PredictionData represents a prediction for a particular route and stop. It
+// contains a set of predictions arranged by direction.
 type PredictionData struct {
 	XMLName                 xml.Name              `xml:"predictions"`
 	PredictionDirectionList []PredictionDirection `xml:"direction"`
@@ -204,12 +224,16 @@ type PredictionData struct {
 	StopTag                 string                `xml:"stopTag,attr"`
 }
 
+// PredictionDirection contains a list of arrival predictions for a particular
+// route and stop traveling in a specific direction.
 type PredictionDirection struct {
 	XMLName        xml.Name     `xml:"direction"`
 	PredictionList []Prediction `xml:"prediction"`
 	Title          string       `xml:"title,attr"`
 }
 
+// Prediction is an individual arrival prediction for a particular route, stop,
+// and direction.
 type Prediction struct {
 	XMLName           xml.Name `xml:"prediction"`
 	EpochTime         string   `xml:"epochTime,attr"`
@@ -224,12 +248,15 @@ type Prediction struct {
 	TripTag           string   `xml:"tripTag,attr"`
 }
 
+// Message is an informational message provided by the transit agency.
 type Message struct {
 	XMLName  xml.Name `xml:"message"`
 	Text     string   `xml:"text,attr"`
 	Priority string   `xml:"priority,attr"`
 }
 
+// GetPredictions fetches a set of predictions for a transit agency at the
+// provided route and stop.
 func (c *Client) GetPredictions(agencyTag string, routeTag string, stopTag string) ([]PredictionData, error) {
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=predictions&a=" + agencyTag + "&r=" + routeTag + "&s=" + stopTag)
 	if httpErr != nil {
@@ -297,12 +324,15 @@ func (c *Client) GetPredictionsForMultiStops(agencyTag string, params ...PredReq
 	return a.PredictionDataList, nil
 }
 
+// LocationResponse is a list of vehicle locations.
 type LocationResponse struct {
 	XMLName     xml.Name          `xml:"body"`
 	VehicleList []VehicleLocation `xml:"vehicle"`
 	LastTime    LocationLastTime  `xml:"lastTime"`
 }
 
+// VehicleLocation represents the location of an individual vehicle traveling
+// on a route.
 type VehicleLocation struct {
 	XMLName          xml.Name `xml:"vehicle"`
 	ID               string   `xml:"id,attr"`
@@ -317,25 +347,34 @@ type VehicleLocation struct {
 	LeadingVehicleID string   `xml:"leadingVehicleId,attr"`
 }
 
+// LocationLastTime represents the last time that a location was reported.
 type LocationLastTime struct {
 	XMLName xml.Name `xml:"lastTime"`
 	Time    string   `xml:"time,attr"`
 }
 
+// VehicleLocationParam is used to specify options when fetching vehicle
+// locations.
 type VehicleLocationParam func() string
 
+// VehicleLocationRoute returns a VehicleLocationParam that indicates the
+// desired route to filter vehicle locations by.
 func VehicleLocationRoute(routeTag string) VehicleLocationParam {
 	return func() string {
 		return "r=" + url.QueryEscape(routeTag)
 	}
 }
 
+// VehicleLocationTime returns a VehicleLocationParam that indicates the
+// desired time after which to fetch vehicle locations.
 func VehicleLocationTime(t string) VehicleLocationParam {
 	return func() string {
 		return "t=" + url.QueryEscape(t)
 	}
 }
 
+// GetVehicleLocations fetches the set of vehicle locations for a transit
+// agency. Use the configParams to filter the requested data.
 func (c *Client) GetVehicleLocations(agencyTag string, configParams ...VehicleLocationParam) (*LocationResponse, error) {
 	params := []string{"command=vehicleLocations", "a=" + url.QueryEscape(agencyTag)}
 	timeWasSet := false
