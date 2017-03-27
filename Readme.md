@@ -46,9 +46,9 @@ func main() {
     fmt.Println(predictions)
 
     // Get predictions for all routes at stop with id 14961.
-    stopPreds, perr := nb.GetStopPredictions("sf-muni", "14961")
+    stopPreds, sperr := nb.GetStopPredictions("sf-muni", "14961")
     if perr != nil {
-        fmt.Println(perr)
+        fmt.Println(sperr)
     }
     fmt.Println(stopPreds)
 }
