@@ -65,6 +65,22 @@ var fakes = map[string]string{
 <lastTime time="1234567890123"/>
 </body>
 `,
+	makeURL("predictions", "a", "alpha", "stopId", "11123"): `
+<body copyright="All data copyright some transit company.">
+<predictions agencyTitle="some transit company" routeTitle="The First" routeTag="1" stopTitle="Some Station Outbound" stopTag="1123">
+<direction title="Outbound">
+<prediction epochTime="1490564618948" seconds="623" minutes="10" isDeparture="false" dirTag="7____O_F00" vehicle="6581" block="0712" tripTag="7447642"/>
+<prediction epochTime="1490565376790" seconds="1381" minutes="23" isDeparture="false" affectedByLayover="true" dirTag="7____O_F00" vehicle="6720" block="0705" tripTag="7447643"/>
+</direction>
+</predictions>
+<predictions agencyTitle="some transit company" routeTitle="The Second" routeTag="2" stopTitle="Some Station Outbound" stopTag="1123">
+<direction title="Outbound">
+<prediction epochTime="1490564681782" seconds="686" minutes="11" isDeparture="false" dirTag="6____O_F00" vehicle="8618" block="0609" tripTag="7447028"/>
+<prediction epochTime="1490565307084" seconds="1311" minutes="21" isDeparture="false" dirTag="6____O_F00" vehicle="8807" block="0602" tripTag="7447029"/>
+</direction>
+</predictions>
+</body>
+`,
 	makeURL("predictionsForMultiStops", "a", "alpha", "stops", "1|1123", "stops", "1|1124"): `
 <body copyright="All data copyright some transit company.">
 <predictions agencyTitle="some transit company" routeTitle="The First" routeTag="1" stopTitle="Some Station Outbound" stopTag="1123">
@@ -234,6 +250,102 @@ func TestGetVehicleLocations(t *testing.T) {
 		LocationLastTime{xmlName("lastTime"), "1234567890123"},
 	}
 	equals(t, &expected, found)
+}
+
+func TestGetStopPredictions(t *testing.T) {
+	nb := NewClient(testingClient(t))
+	found, err := nb.GetStopPredictions("alpha", "11123")
+	ok(t, err)
+
+	expected := []PredictionData{
+		PredictionData{
+			xmlName("predictions"),
+			[]PredictionDirection{
+				PredictionDirection{
+					xmlName("direction"),
+					[]Prediction{
+						Prediction{
+							xmlName("prediction"),
+							"1490564618948",
+							"623",
+							"10",
+							"false",
+							"",
+							"7____O_F00",
+							"6581",
+							"",
+							"0712",
+							"7447642",
+						},
+						Prediction{
+							xmlName("prediction"),
+							"1490565376790",
+							"1381",
+							"23",
+							"false",
+							"true",
+							"7____O_F00",
+							"6720",
+							"",
+							"0705",
+							"7447643",
+						},
+					},
+					"Outbound",
+				},
+			},
+			nil,
+			"some transit company",
+			"The First",
+			"1",
+			"Some Station Outbound",
+			"1123",
+		},
+		PredictionData{
+			xmlName("predictions"),
+			[]PredictionDirection{
+				PredictionDirection{
+					xmlName("direction"),
+					[]Prediction{
+						Prediction{
+							xmlName("prediction"),
+							"1490564681782",
+							"686",
+							"11",
+							"false",
+							"",
+							"6____O_F00",
+							"8618",
+							"",
+							"0609",
+							"7447028",
+						},
+						Prediction{
+							xmlName("prediction"),
+							"1490565307084",
+							"1311",
+							"21",
+							"false",
+							"",
+							"6____O_F00",
+							"8807",
+							"",
+							"0602",
+							"7447029",
+						},
+					},
+					"Outbound",
+				},
+			},
+			nil,
+			"some transit company",
+			"The Second",
+			"2",
+			"Some Station Outbound",
+			"1123",
+		},
+	}
+	equals(t, expected, found)
 }
 
 func TestGetPredictionsForMultiStops(t *testing.T) {
