@@ -40,19 +40,18 @@ type Agency struct {
 func (c *Client) GetAgencyList() ([]Agency, error) {
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=agencyList")
 	if httpErr != nil {
-		return nil, httpErr
+		return nil, fmt.Errorf("could not fetch agencies from nextbus: %v", httpErr)
 	}
 	defer resp.Body.Close()
 
 	body, readErr := ioutil.ReadAll(resp.Body)
 	if readErr != nil {
-		return nil, readErr
+		return nil, fmt.Errorf("could not parse agencies response body: %v", readErr)
 	}
 
 	var a AgencyResponse
-	xmlErr := xml.Unmarshal(body, &a)
-	if xmlErr != nil {
-		return nil, xmlErr
+	if xmlErr := xml.Unmarshal(body, &a); xmlErr != nil {
+		return nil, fmt.Errorf("could not parse agencies XML: %v", xmlErr)
 	}
 	return a.AgencyList, nil
 }
@@ -74,19 +73,19 @@ type Route struct {
 func (c *Client) GetRouteList(agencyTag string) ([]Route, error) {
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=routeList&a=" + agencyTag)
 	if httpErr != nil {
-		return nil, httpErr
+		return nil, fmt.Errorf("could not fetch routes from nextbus: %v", httpErr)
 	}
 	defer resp.Body.Close()
 
 	body, readErr := ioutil.ReadAll(resp.Body)
 	if readErr != nil {
-		return nil, readErr
+		return nil, fmt.Errorf("could not parse routes response body: %v", readErr)
 	}
 
 	var a RouteResponse
 	xmlErr := xml.Unmarshal(body, &a)
 	if xmlErr != nil {
-		return nil, xmlErr
+		return nil, fmt.Errorf("could not parse routes XML: %v", xmlErr)
 	}
 	return a.RouteList, nil
 }
@@ -188,19 +187,18 @@ func (c *Client) GetRouteConfig(agencyTag string, configParams ...RouteConfigPar
 	}
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?" + strings.Join(params, "&"))
 	if httpErr != nil {
-		return nil, httpErr
+		return nil, fmt.Errorf("could not fetch route config from nextbus: %v", httpErr)
 	}
 	defer resp.Body.Close()
 
 	body, readErr := ioutil.ReadAll(resp.Body)
 	if readErr != nil {
-		return nil, readErr
+		return nil, fmt.Errorf("could not parse route config response body: %v", readErr)
 	}
 
 	var a RouteConfigResponse
-	xmlErr := xml.Unmarshal(body, &a)
-	if xmlErr != nil {
-		return nil, xmlErr
+	if xmlErr := xml.Unmarshal(body, &a); xmlErr != nil {
+		return nil, fmt.Errorf("could not parse route config XML: %v", xmlErr)
 	}
 	return a.RouteList, nil
 }
@@ -261,19 +259,18 @@ type Message struct {
 func (c *Client) GetStopPredictions(agencyTag string, stopID string) ([]PredictionData, error) {
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=predictions&a=" + agencyTag + "&stopId=" + stopID)
 	if httpErr != nil {
-		return nil, httpErr
+		return nil, fmt.Errorf("could not fetch stop predictions from nextbus: %v", httpErr)
 	}
 	defer resp.Body.Close()
 
 	body, readErr := ioutil.ReadAll(resp.Body)
 	if readErr != nil {
-		return nil, readErr
+		return nil, fmt.Errorf("could not parse stop predictions response body: %v", readErr)
 	}
 
 	var a PredictionResponse
-	xmlErr := xml.Unmarshal(body, &a)
-	if xmlErr != nil {
-		return nil, xmlErr
+	if xmlErr := xml.Unmarshal(body, &a); xmlErr != nil {
+		return nil, fmt.Errorf("could not parse stop predictions XML: %v", xmlErr)
 	}
 	return a.PredictionDataList, nil
 }
@@ -283,19 +280,18 @@ func (c *Client) GetStopPredictions(agencyTag string, stopID string) ([]Predicti
 func (c *Client) GetPredictions(agencyTag string, routeTag string, stopTag string) ([]PredictionData, error) {
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=predictions&a=" + agencyTag + "&r=" + routeTag + "&s=" + stopTag)
 	if httpErr != nil {
-		return nil, httpErr
+		return nil, fmt.Errorf("could not fetch predictions from nextbus: %v", httpErr)
 	}
 	defer resp.Body.Close()
 
 	body, readErr := ioutil.ReadAll(resp.Body)
 	if readErr != nil {
-		return nil, readErr
+		return nil, fmt.Errorf("could not parse predictions response body: %v", readErr)
 	}
 
 	var a PredictionResponse
-	xmlErr := xml.Unmarshal(body, &a)
-	if xmlErr != nil {
-		return nil, xmlErr
+	if xmlErr := xml.Unmarshal(body, &a); xmlErr != nil {
+		return nil, fmt.Errorf("could not parse predictions XML: %v", xmlErr)
 	}
 	return a.PredictionDataList, nil
 }
@@ -330,19 +326,18 @@ func (c *Client) GetPredictionsForMultiStops(agencyTag string, params ...PredReq
 
 	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?" + strings.Join(queryParams, "&"))
 	if httpErr != nil {
-		return nil, httpErr
+		return nil, fmt.Errorf("could not fetch predictions for multiple stops from nextbus: %v", httpErr)
 	}
 	defer resp.Body.Close()
 
 	body, readErr := ioutil.ReadAll(resp.Body)
 	if readErr != nil {
-		return nil, readErr
+		return nil, fmt.Errorf("could not parse predictions for multiple stops response body: %v", readErr)
 	}
 
 	var a PredictionResponse
-	xmlErr := xml.Unmarshal(body, &a)
-	if xmlErr != nil {
-		return nil, xmlErr
+	if xmlErr := xml.Unmarshal(body, &a); xmlErr != nil {
+		return nil, fmt.Errorf("could not parse predictions for multiple stops XML: %v", xmlErr)
 	}
 	return a.PredictionDataList, nil
 }
@@ -411,20 +406,20 @@ func (c *Client) GetVehicleLocations(agencyTag string, configParams ...VehicleLo
 	if !timeWasSet {
 		params = append(params, VehicleLocationTime("0")())
 	}
-	resp, err := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?" + strings.Join(params, "&"))
-	if err != nil {
-		return nil, err
+	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?" + strings.Join(params, "&"))
+	if httpErr != nil {
+		return nil, fmt.Errorf("could not fetch vehicle locations from nextbus: %v", httpErr)
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	body, readErr := ioutil.ReadAll(resp.Body)
+	if readErr == nil {
+		return nil, fmt.Errorf("could not parse vehicle locations response body: %v", readErr)
 	}
 
 	var result LocationResponse
-	if err = xml.Unmarshal(body, &result); err != nil {
-		return nil, err
+	if xmlErr := xml.Unmarshal(body, &result); xmlErr != nil {
+		return nil, fmt.Errorf("could not parse vehicle locations XML: %v", xmlErr)
 	}
 	return &result, nil
 }
