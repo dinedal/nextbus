@@ -38,12 +38,19 @@ func main() {
     }
     fmt.Println(rconfig)
 
+    // Get predictions for the N train at stop with tag 5205.
     predictions, perr := nb.GetPredictions("sf-muni", "N", "5205")
     if perr != nil {
         fmt.Println(perr)
     }
     fmt.Println(predictions)
 
+    // Get predictions for all routes at stop with id 14961.
+    stopPreds, perr := nb.GetStopPredictions("sf-muni", "14961")
+    if perr != nil {
+        fmt.Println(perr)
+    }
+    fmt.Println(stopPreds)
 }
 ```
 
