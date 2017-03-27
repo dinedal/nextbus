@@ -255,6 +255,29 @@ type Message struct {
 	Priority string   `xml:"priority,attr"`
 }
 
+// GetStopPredictions fetches a set of predictions for a transit agency at the
+// provided stop. Note that this requires the 'stopID' which is the unique
+// identifier for a stop indepenedent of a route.
+func (c *Client) GetStopPredictions(agencyTag string, stopID string) ([]PredictionData, error) {
+	resp, httpErr := c.httpClient.Get("http://webservices.nextbus.com/service/publicXMLFeed?command=predictions&a=" + agencyTag + "&stopId=" + stopID)
+	if httpErr != nil {
+		return nil, httpErr
+	}
+	defer resp.Body.Close()
+
+	body, readErr := ioutil.ReadAll(resp.Body)
+	if readErr != nil {
+		return nil, readErr
+	}
+
+	var a PredictionResponse
+	xmlErr := xml.Unmarshal(body, &a)
+	if xmlErr != nil {
+		return nil, xmlErr
+	}
+	return a.PredictionDataList, nil
+}
+
 // GetPredictions fetches a set of predictions for a transit agency at the
 // provided route and stop.
 func (c *Client) GetPredictions(agencyTag string, routeTag string, stopTag string) ([]PredictionData, error) {
