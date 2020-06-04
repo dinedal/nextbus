@@ -413,7 +413,7 @@ func (c *Client) GetVehicleLocations(agencyTag string, configParams ...VehicleLo
 	defer resp.Body.Close()
 
 	body, readErr := ioutil.ReadAll(resp.Body)
-	if readErr == nil {
+	if readErr != nil {
 		return nil, fmt.Errorf("could not parse vehicle locations response body: %v", readErr)
 	}
 
